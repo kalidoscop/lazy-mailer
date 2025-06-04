@@ -1,5 +1,9 @@
 import { BaseCommand } from "@adonisjs/core/build/standalone";
 import Mail from "@ioc:Adonis/Addons/Mail";
+import { execSync } from "child_process";
+import { readFileSync, unlinkSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 export default class Mailer extends BaseCommand {
   /**
@@ -29,15 +33,33 @@ export default class Mailer extends BaseCommand {
   };
 
   public async run() {
-    // this.logger.info('Hello world!')
-    //  const { default: MailModel } = await import('App/Models/MailModel')
-    //  const res = await MailModel.query()
-    //  console.log(res);
     const recipientEmail = await this.prompt.ask(
       "Entrer l'email du destinataire"
     );
     const object = await this.prompt.ask("Objet de l'email");
-    const content = await this.prompt.ask("Contenu de l'email");
+
+    const tmpFilePath = join(tmpdir(), "lazy_mailer_content.html");
+
+    // Contenu de base prérempli
+    const placeholder = `<!-- Rédigez ici le contenu HTML de l'email <b>pour mettre en gras</b>  <i>pour mettre en italique</i> -->
+<p>Bonjour,</p>
+
+<p>Ceci est un exemple d'email envoyé depuis LazyMailer.</p>
+
+<p>À bientôt !</p>`;
+
+    writeFileSync(tmpFilePath, placeholder);
+    try {
+      execSync(`${process.env.EDITOR || "nano"} ${tmpFilePath}`, {
+        stdio: "inherit",
+      });
+    } catch (error) {
+      this.logger.error("Impossible d’ouvrir l’éditeur.");
+      return;
+    }
+    const content = readFileSync(tmpFilePath, "utf-8");
+    unlinkSync(tmpFilePath);
+
     const { default: MailModel } = await import("App/Models/MailModel");
 
     await Mail.send((message) => {
@@ -53,7 +75,9 @@ export default class Mailer extends BaseCommand {
       })
       .catch((error) => {
         console.log(error);
-        this.logger.error(`Erreur lors de l'envoie  de l'email à ${recipientEmail}`);
+        this.logger.error(
+          `Erreur lors de l'envoie  de l'email à ${recipientEmail}`
+        );
       });
   }
 }

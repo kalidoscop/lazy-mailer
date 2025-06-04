@@ -42,11 +42,16 @@ npm run config
 
 ## Utilisation
 
-### 1. Pour envoyer un email
+### 1. Pour configurer l'editeur de email
+```bash
+export EDITOR=vim # "nano"
+```
+
+### 2. Pour envoyer un email
 ```bash
 node ace mailer
 ```
-### 2. Pour lister tous vos email envoyés
+### 3. Pour lister tous vos email envoyés
 ```bash
 node ace mailer:all
 ```
